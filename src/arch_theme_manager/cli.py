@@ -3,13 +3,23 @@
 import argparse
 import json
 import sys
+from pathlib import Path
 
 from .core.doctor import ThemeDoctor
 from .core.loader import ThemeError, ThemeLoader
-from .core.orchestrator import ThemeApplyError, ThemeOrchestrator
+from .core.orchestrator import (
+    ThemeApplyError,
+    ThemeOrchestrator,
+)
 from .core.state import ThemeState
-from .core.validator import ThemeValidationError, ThemeValidator
-
+from .core.theme_installer import (
+    ThemeInstallError,
+    ThemeInstaller,
+)
+from .core.validator import (
+    ThemeValidationError,
+    ThemeValidator,
+)
 from .paths import (
     ensure_runtime_dirs,
     generated_dir,
@@ -23,7 +33,12 @@ validator = None
 state = None
 orchestrator = None
 doctor = None
+installer = None
 
+
+# ============================================================
+# INITIALIZATION
+# ============================================================
 
 def initialize() -> None:
     global loader
@@ -31,6 +46,7 @@ def initialize() -> None:
     global state
     global orchestrator
     global doctor
+    global installer
 
     ensure_runtime_dirs()
 
@@ -58,6 +74,11 @@ def initialize() -> None:
         generated_dir=generated_dir(),
     )
 
+    installer = ThemeInstaller(
+        themes_dir(),
+        validator,
+    )
+
 
 # ============================================================
 # LIST
@@ -73,8 +94,15 @@ def command_list(_args):
     current = state.current()
 
     for theme in themes:
-        marker = "*" if theme == current else " "
-        print(f"{marker} {theme}")
+        marker = (
+            "*"
+            if theme == current
+            else " "
+        )
+
+        print(
+            f"{marker} {theme}"
+        )
 
 
 # ============================================================
@@ -170,7 +198,8 @@ def command_next(_args):
         )
 
         target = themes[
-            (index + 1) % len(themes)
+            (index + 1)
+            % len(themes)
         ]
 
     orchestrator.apply(
@@ -204,7 +233,8 @@ def command_previous(_args):
         )
 
         target = themes[
-            (index - 1) % len(themes)
+            (index - 1)
+            % len(themes)
         ]
 
     orchestrator.apply(
@@ -213,6 +243,22 @@ def command_previous(_args):
 
     print(
         f"Applied theme '{target}'."
+    )
+
+
+# ============================================================
+# INSTALL THEME
+# ============================================================
+
+def command_install_theme(args):
+    theme_name = installer.install(
+        Path(args.path),
+        name=args.name,
+        force=args.force,
+    )
+
+    print(
+        f"Installed theme '{theme_name}'."
     )
 
 
@@ -234,13 +280,20 @@ def command_doctor(_args):
 def build_parser():
     parser = argparse.ArgumentParser(
         prog="themectl",
-        description="Arch Linux / Hyprland theme orchestrator",
+        description=(
+            "Arch Linux / Hyprland "
+            "theme orchestrator"
+        ),
     )
 
     subcommands = parser.add_subparsers(
         dest="command",
         required=True,
     )
+
+    # --------------------------------------------------------
+    # LIST
+    # --------------------------------------------------------
 
     list_parser = subcommands.add_parser(
         "list",
@@ -251,9 +304,16 @@ def build_parser():
         function=command_list,
     )
 
+    # --------------------------------------------------------
+    # SHOW
+    # --------------------------------------------------------
+
     show_parser = subcommands.add_parser(
         "show",
-        help="Show resolved theme configuration",
+        help=(
+            "Show resolved theme "
+            "configuration"
+        ),
     )
 
     show_parser.add_argument(
@@ -264,9 +324,15 @@ def build_parser():
         function=command_show,
     )
 
-    validate_parser = subcommands.add_parser(
-        "validate",
-        help="Validate a theme",
+    # --------------------------------------------------------
+    # VALIDATE
+    # --------------------------------------------------------
+
+    validate_parser = (
+        subcommands.add_parser(
+            "validate",
+            help="Validate a theme",
+        )
     )
 
     validate_parser.add_argument(
@@ -276,6 +342,10 @@ def build_parser():
     validate_parser.set_defaults(
         function=command_validate,
     )
+
+    # --------------------------------------------------------
+    # APPLY
+    # --------------------------------------------------------
 
     apply_parser = subcommands.add_parser(
         "apply",
@@ -290,14 +360,24 @@ def build_parser():
         function=command_apply,
     )
 
-    current_parser = subcommands.add_parser(
-        "current",
-        help="Show current theme",
+    # --------------------------------------------------------
+    # CURRENT
+    # --------------------------------------------------------
+
+    current_parser = (
+        subcommands.add_parser(
+            "current",
+            help="Show current theme",
+        )
     )
 
     current_parser.set_defaults(
         function=command_current,
     )
+
+    # --------------------------------------------------------
+    # NEXT
+    # --------------------------------------------------------
 
     next_parser = subcommands.add_parser(
         "next",
@@ -308,18 +388,80 @@ def build_parser():
         function=command_next,
     )
 
-    previous_parser = subcommands.add_parser(
-        "previous",
-        help="Apply the previous theme",
+    # --------------------------------------------------------
+    # PREVIOUS
+    # --------------------------------------------------------
+
+    previous_parser = (
+        subcommands.add_parser(
+            "previous",
+            help="Apply the previous theme",
+        )
     )
 
     previous_parser.set_defaults(
         function=command_previous,
     )
 
-    doctor_parser = subcommands.add_parser(
-        "doctor",
-        help="Check theme manager health",
+    # --------------------------------------------------------
+    # INSTALL THEME
+    # --------------------------------------------------------
+
+    install_parser = (
+        subcommands.add_parser(
+            "install-theme",
+            help=(
+                "Install a theme "
+                "from a directory"
+            ),
+            description=(
+                "Install a theme "
+                "from a directory"
+            ),
+        )
+    )
+
+    install_parser.add_argument(
+        "path",
+        help=(
+            "Path to the theme "
+            "directory"
+        ),
+    )
+
+    install_parser.add_argument(
+        "--name",
+        help=(
+            "Install using a "
+            "different theme name"
+        ),
+    )
+
+    install_parser.add_argument(
+        "--force",
+        action="store_true",
+        help=(
+            "Replace an existing "
+            "theme"
+        ),
+    )
+
+    install_parser.set_defaults(
+        function=command_install_theme,
+    )
+
+    # --------------------------------------------------------
+    # DOCTOR
+    # --------------------------------------------------------
+
+    doctor_parser = (
+        subcommands.add_parser(
+            "doctor",
+            help=(
+                "Check theme manager "
+                "health"
+            ),
+        )
     )
 
     doctor_parser.set_defaults(
@@ -349,6 +491,7 @@ def main():
         ThemeError,
         ThemeValidationError,
         ThemeApplyError,
+        ThemeInstallError,
     ) as exc:
         print(
             f"Error: {exc}",
