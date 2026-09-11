@@ -40,6 +40,7 @@ Arch Theme Manager applies a single theme across multiple desktop components fro
 - Theme copying
 - Theme renaming
 - Theme removal
+- Theme exporting
 - Current and previous theme state
 - Compensating rollback
 - XDG-compliant paths
@@ -168,6 +169,21 @@ Force removal of the active theme:
 themectl remove-theme portal --force
 ```
 
+Export an installed theme:
+
+```bash
+themectl export-theme portal ~/ThemeExports
+```
+
+Replace an existing export:
+
+```bash
+themectl export-theme \
+    portal \
+    ~/ThemeExports \
+    --force
+```
+
 Check the system:
 
 ```bash
@@ -211,6 +227,8 @@ apply
    ↓
 rename
    ↓
+export
+   ↓
 remove
 ```
 
@@ -222,12 +240,44 @@ themectl copy-theme custom custom-alt
 themectl validate custom-alt
 themectl apply custom-alt
 themectl rename-theme custom-alt final-theme
+themectl export-theme final-theme ~/ThemeExports
 themectl remove-theme final-theme
 ```
 
-`copy-theme` leaves the original theme untouched and creates a separate theme directory with an updated manifest name.
+`copy-theme` leaves the original theme untouched and creates a separate installed theme with an updated manifest name.
+
+`export-theme` copies an installed theme to another directory without modifying the installed source.
 
 The currently active theme is protected from accidental removal unless `--force` is explicitly used.
+
+## Exporting Themes
+
+Export a theme for backup or sharing:
+
+```bash
+themectl export-theme orbital ~/ThemeExports
+```
+
+This creates:
+
+```text
+~/ThemeExports/orbital/
+├── theme.json
+└── wallpaper.png
+```
+
+Existing exports are protected by default.
+
+To intentionally replace an existing export:
+
+```bash
+themectl export-theme \
+    orbital \
+    ~/ThemeExports \
+    --force
+```
+
+The theme is validated before export.
 
 ## Project Paths
 
@@ -272,7 +322,7 @@ pytest
 Run a specific test module:
 
 ```bash
-pytest -v tests/test_theme_copier.py
+pytest -v tests/test_theme_exporter.py
 ```
 
 ## Documentation

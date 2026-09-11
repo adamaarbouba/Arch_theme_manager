@@ -167,7 +167,7 @@ This shows the fully resolved theme configuration, including inherited values.
 themectl validate portal
 ```
 
-Validation occurs before a theme is applied or installed.
+Validation occurs before a theme is applied, installed, copied, or exported.
 
 ## Applying a Theme
 
@@ -245,7 +245,7 @@ a copied manifest
 an updated name field
 ```
 
-For example:
+Example:
 
 ```bash
 themectl copy-theme orbital orbital-edit
@@ -317,6 +317,55 @@ Forced removal clears the active theme state.
 
 Internal themes and symlinked themes are protected from removal.
 
+## Exporting a Theme
+
+Export an installed theme to another directory:
+
+```bash
+themectl export-theme portal ~/ThemeExports
+```
+
+The destination argument represents the directory that will contain the exported theme.
+
+The command above creates:
+
+```text
+~/ThemeExports/portal/
+├── theme.json
+└── wallpaper.png
+```
+
+The installed source theme remains unchanged.
+
+If the export already exists, the command refuses to overwrite it:
+
+```bash
+themectl export-theme portal ~/ThemeExports
+```
+
+To intentionally replace an existing export:
+
+```bash
+themectl export-theme \
+    portal \
+    ~/ThemeExports \
+    --force
+```
+
+The theme is validated before export begins.
+
+Exports use a temporary staging directory before being moved into their final destination.
+
+When `--force` is used, the existing export is temporarily moved aside before the new export replaces it.
+
+If replacement fails, Arch Theme Manager attempts to restore the previous export.
+
+Internal themes cannot be exported.
+
+Symlinked installed themes are refused.
+
+A symlinked destination is also refused when `--force` is used.
+
 ## Creating a Theme
 
 A simple starting point is the bundled example:
@@ -353,6 +402,14 @@ Apply:
 themectl apply my-theme
 ```
 
+Export it when ready:
+
+```bash
+themectl export-theme \
+    my-theme \
+    ~/ThemeExports
+```
+
 ## Theme Management Workflow
 
 Example workflow:
@@ -363,6 +420,7 @@ themectl copy-theme base-custom experiment
 themectl validate experiment
 themectl apply experiment
 themectl rename-theme experiment finished-theme
+themectl export-theme finished-theme ~/ThemeExports
 themectl remove-theme finished-theme
 ```
 

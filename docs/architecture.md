@@ -1,6 +1,6 @@
 # Architecture
 
-Arch Theme Manager separates theme data, validation, orchestration, state, theme management, and desktop-specific integrations.
+Arch Theme Manager separates theme data, validation, orchestration, state, theme management, exporting, and desktop-specific integrations.
 
 ## High-Level Flow
 
@@ -59,6 +59,8 @@ border size
 monitor type
 ```
 
+The same validator is reused by theme installation, copying, and exporting.
+
 ## Orchestrator
 
 Normal application flow:
@@ -87,21 +89,43 @@ Theme management is separated from theme application.
 
 Installs a theme from an external directory.
 
-It uses a temporary staging directory, validates the copied theme, then moves it into the final theme directory.
+Flow:
+
+```text
+source directory
+      ↓
+copy to staging
+      ↓
+load
+      ↓
+validate
+      ↓
+move to final theme directory
+```
+
+An existing theme can only be replaced when force mode is explicitly requested.
 
 ### ThemeCopier
 
 Duplicates an existing installed theme.
 
-It:
+Flow:
 
 ```text
-copies the source into staging
-updates the manifest name
-validates the copied theme
-moves the copy into its final directory
-cleans failed staging data
+installed source
+      ↓
+copy to staging
+      ↓
+update manifest name
+      ↓
+load
+      ↓
+validate
+      ↓
+move to final theme directory
 ```
+
+The original installed theme remains unchanged.
 
 ### ThemeRenamer
 
@@ -116,6 +140,42 @@ Removes installed themes.
 The currently active theme is protected unless forced removal is requested.
 
 Forced removal of the active theme clears persistent theme state.
+
+### ThemeExporter
+
+Copies an installed theme to an external destination.
+
+Flow:
+
+```text
+installed theme
+      ↓
+load
+      ↓
+validate
+      ↓
+copy to export staging
+      ↓
+move to export destination
+```
+
+If the destination already exists, export is refused unless force mode is requested.
+
+Forced replacement uses a temporary backup:
+
+```text
+existing export
+      ↓
+temporary backup
+
+new staging export
+      ↓
+final destination
+```
+
+After a successful replacement, the temporary backup is removed.
+
+If replacement fails before completion, the exporter attempts to restore the previous export.
 
 ## Adapters
 
@@ -285,6 +345,15 @@ themectl install-theme PATH
 themectl copy-theme SOURCE NEW_NAME
 themectl rename-theme OLD_NAME NEW_NAME
 themectl remove-theme THEME
+themectl export-theme THEME DESTINATION
+```
+
+Force-capable management commands:
+
+```bash
+themectl install-theme PATH --force
+themectl remove-theme THEME --force
+themectl export-theme THEME DESTINATION --force
 ```
 
 System health:
