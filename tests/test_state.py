@@ -46,3 +46,14 @@ def test_state_file_is_created(tmp_path):
     assert (
         tmp_path / "current.json"
     ).is_file()
+
+def test_state_can_be_cleared(tmp_path):
+    state = ThemeState(tmp_path)
+
+    state.save("portal")
+    state.save("lucy")
+
+    state.clear()
+
+    assert state.current() is None
+    assert state.previous() is None

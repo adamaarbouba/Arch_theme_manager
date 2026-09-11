@@ -16,6 +16,10 @@ from .core.theme_installer import (
     ThemeInstallError,
     ThemeInstaller,
 )
+from .core.theme_remover import (
+    ThemeRemoveError,
+    ThemeRemover,
+)
 from .core.validator import (
     ThemeValidationError,
     ThemeValidator,
@@ -34,6 +38,7 @@ state = None
 orchestrator = None
 doctor = None
 installer = None
+remover = None
 
 
 # ============================================================
@@ -47,6 +52,7 @@ def initialize() -> None:
     global orchestrator
     global doctor
     global installer
+    global remover
 
     ensure_runtime_dirs()
 
@@ -77,6 +83,11 @@ def initialize() -> None:
     installer = ThemeInstaller(
         themes_dir(),
         validator,
+    )
+
+    remover = ThemeRemover(
+        themes_dir(),
+        state,
     )
 
 
@@ -259,6 +270,21 @@ def command_install_theme(args):
 
     print(
         f"Installed theme '{theme_name}'."
+    )
+
+
+# ============================================================
+# REMOVE THEME
+# ============================================================
+
+def command_remove_theme(args):
+    theme_name = remover.remove(
+        args.theme,
+        force=args.force,
+    )
+
+    print(
+        f"Removed theme '{theme_name}'."
     )
 
 
@@ -451,6 +477,43 @@ def build_parser():
     )
 
     # --------------------------------------------------------
+    # REMOVE THEME
+    # --------------------------------------------------------
+
+    remove_parser = (
+        subcommands.add_parser(
+            "remove-theme",
+            help=(
+                "Remove an installed theme"
+            ),
+            description=(
+                "Remove an installed theme"
+            ),
+        )
+    )
+
+    remove_parser.add_argument(
+        "theme",
+        help=(
+            "Name of the theme "
+            "to remove"
+        ),
+    )
+
+    remove_parser.add_argument(
+        "--force",
+        action="store_true",
+        help=(
+            "Allow removal of the "
+            "currently active theme"
+        ),
+    )
+
+    remove_parser.set_defaults(
+        function=command_remove_theme,
+    )
+
+    # --------------------------------------------------------
     # DOCTOR
     # --------------------------------------------------------
 
@@ -492,6 +555,7 @@ def main():
         ThemeValidationError,
         ThemeApplyError,
         ThemeInstallError,
+        ThemeRemoveError,
     ) as exc:
         print(
             f"Error: {exc}",

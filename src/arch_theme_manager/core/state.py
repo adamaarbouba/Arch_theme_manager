@@ -52,3 +52,11 @@ class ThemeState:
 
         except (json.JSONDecodeError, OSError):
             return None
+
+
+    def clear(self) -> None:
+        try:
+            self.state_file.unlink()
+
+        except FileNotFoundError:
+            pass
