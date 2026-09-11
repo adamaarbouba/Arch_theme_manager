@@ -12,13 +12,6 @@ Arch Theme Manager applies a single theme across multiple desktop components fro
   <img src="assets/demo.png" alt="Orbital desktop preview" width="900">
 </p>
 
-
-### Theme Manager Health Check
-
-<p align="center">
-  <img src="assets/doctor.png" alt="themectl doctor health check" width="900">
-</p>
-
 ## Supported Integrations
 
 - Hyprland
@@ -37,6 +30,9 @@ Arch Theme Manager applies a single theme across multiple desktop components fro
 - Theme inheritance
 - Deep configuration merging
 - Theme validation
+- Theme installation
+- Theme removal
+- Theme renaming
 - Current and previous theme state
 - Compensating rollback
 - XDG-compliant paths
@@ -53,7 +49,7 @@ git clone https://github.com/adamaarbouba/Arch_theme_manager.git
 cd Arch_theme_manager
 ```
 
-Run the installer:
+Run:
 
 ```bash
 ./scripts/install.sh
@@ -65,7 +61,7 @@ Reload Zsh:
 source ~/.zshrc
 ```
 
-Verify the installation:
+Verify:
 
 ```bash
 which themectl
@@ -79,7 +75,7 @@ The CLI is installed at:
 ~/.local/bin/themectl
 ```
 
-## Usage
+## CLI
 
 List installed themes:
 
@@ -105,20 +101,61 @@ Apply a theme:
 themectl apply portal
 ```
 
-Show the current theme:
+Show the active theme:
 
 ```bash
 themectl current
 ```
 
-Cycle through themes:
+Cycle themes:
 
 ```bash
 themectl next
 themectl previous
 ```
 
-Check the installation:
+Install a theme:
+
+```bash
+themectl install-theme /path/to/theme
+```
+
+Install with a custom name:
+
+```bash
+themectl install-theme \
+    /path/to/theme \
+    --name portal
+```
+
+Replace an existing theme:
+
+```bash
+themectl install-theme \
+    /path/to/theme \
+    --name portal \
+    --force
+```
+
+Remove a theme:
+
+```bash
+themectl remove-theme portal
+```
+
+Force removal of the active theme:
+
+```bash
+themectl remove-theme portal --force
+```
+
+Rename a theme:
+
+```bash
+themectl rename-theme portal gateway
+```
+
+Check the system:
 
 ```bash
 themectl doctor
@@ -145,6 +182,34 @@ A public example theme is included at:
 ```text
 themes/example/
 ```
+
+## Theme Management
+
+Arch Theme Manager supports the basic theme lifecycle directly through the CLI:
+
+```text
+install
+   ↓
+validate
+   ↓
+apply
+   ↓
+rename
+   ↓
+remove
+```
+
+For example:
+
+```bash
+themectl install-theme themes/example --name custom
+themectl validate custom
+themectl apply custom
+themectl rename-theme custom my-theme
+themectl remove-theme my-theme
+```
+
+The currently active theme is protected from accidental removal unless `--force` is explicitly used.
 
 ## Project Paths
 
@@ -180,19 +245,41 @@ Install development dependencies:
 pip install -e ".[dev]"
 ```
 
-Run the test suite:
+Run the full test suite:
 
 ```bash
 pytest
 ```
 
-The project currently includes **45 automated tests** covering loading, inheritance, validation, state, XDG paths, orchestration, rollback behavior, CLI availability, and the bundled example theme.
+Run a specific test module:
+
+```bash
+pytest -v tests/test_theme_installer.py
+```
 
 ## Documentation
 
-- `docs/installation.md`
-- `docs/themes.md`
-- `docs/architecture.md`
+Detailed documentation is available in:
+
+```text
+docs/installation.md
+docs/themes.md
+docs/architecture.md
+```
+
+## Migration
+
+Older installations using:
+
+```text
+~/.config/hypr/theme-engine
+```
+
+can be migrated by the installer.
+
+Existing configuration files are backed up before integration changes are made.
+
+Keep the old installation until the migrated setup has been verified.
 
 ## License
 
