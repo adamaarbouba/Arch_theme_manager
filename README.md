@@ -31,6 +31,14 @@ A modular theme orchestrator for Arch Linux + Hyprland.
 
 Arch Theme Manager applies a single theme across multiple desktop components from one theme manifest.
 
+
+## Preview
+
+### Orbital
+
+![Orbital desktop](assets/demo.png)
+
+
 ## Supported Integrations
 
 - Hyprland
