@@ -1,43 +1,16 @@
 # Arch Theme Manager
 
-A modular theme orchestrator for Arch Linux and Hyprland.
+A modular theme orchestrator for **Arch Linux + Hyprland**.
 
-One theme switch can coordinate:
-
-- Hyprpaper
-- Hyprland
-- Waybar
-- SwayNC
-- Kitty
-- Zsh
-- Hyprlock
-- Hyprtoolkit / Hyprlauncher
-
-## Status
-
-Currently under active development.
-
-The project began as a personal Hyprland theme engine and is being
-refactored into a reusable Python package.
-
-## CLI
-
-The primary command is:
-
-```bash
-themectl# Arch Theme Manager
-
-A modular theme orchestrator for Arch Linux + Hyprland.
-
-Arch Theme Manager applies a single theme across multiple desktop components from one theme manifest.
-
+Arch Theme Manager applies a single theme across multiple desktop components from one unified theme manifest.
 
 ## Preview
 
 ### Orbital
 
-![Orbital desktop](assets/demo.png)
-
+<p align="center">
+  <img src="assets/demo.png" alt="Orbital desktop preview" width="900">
+</p>
 
 ## Supported Integrations
 
@@ -73,7 +46,7 @@ git clone https://github.com/adamaarbouba/Arch_theme_manager.git
 cd Arch_theme_manager
 ```
 
-Run:
+Run the installer:
 
 ```bash
 ./scripts/install.sh
@@ -85,7 +58,7 @@ Reload Zsh:
 source ~/.zshrc
 ```
 
-Verify:
+Verify the installation:
 
 ```bash
 which themectl
@@ -93,7 +66,7 @@ themectl current
 themectl doctor
 ```
 
-The CLI should be installed at:
+The CLI is installed at:
 
 ```text
 ~/.local/bin/themectl
@@ -101,7 +74,7 @@ The CLI should be installed at:
 
 ## Usage
 
-List themes:
+List installed themes:
 
 ```bash
 themectl list
@@ -113,13 +86,13 @@ Show a resolved theme:
 themectl show portal
 ```
 
-Validate:
+Validate a theme:
 
 ```bash
 themectl validate portal
 ```
 
-Apply:
+Apply a theme:
 
 ```bash
 themectl apply portal
@@ -131,20 +104,20 @@ Show the current theme:
 themectl current
 ```
 
-Switch themes:
+Cycle through themes:
 
 ```bash
 themectl next
 themectl previous
 ```
 
-Check system health:
+Check the installation:
 
 ```bash
 themectl doctor
 ```
 
-## Theme Storage
+## Theme Structure
 
 Themes are stored in:
 
@@ -160,95 +133,59 @@ portal/
 └── wallpaper.png
 ```
 
-A bundled example theme is available in:
+A public example theme is included at:
 
 ```text
 themes/example/
 ```
 
-## Generated Files
-
-Generated configuration fragments are stored in:
+## Project Paths
 
 ```text
+Themes:
+~/.config/arch-theme-manager/themes/
+
+Generated:
 ~/.config/arch-theme-manager/generated/
-```
 
-## State
-
-Persistent state is stored in:
-
-```text
+State:
 ~/.local/state/arch-theme-manager/
-```
 
-The manager tracks both the current and previous themes.
-
-## Application Files
-
-The installed application environment lives at:
-
-```text
+Application:
 ~/.local/share/arch-theme-manager/
+
+CLI:
+~/.local/bin/themectl
 ```
 
 ## Development
 
-Create a development environment:
+Create a virtual environment:
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 ```
 
-Install the package with development dependencies:
+Install development dependencies:
 
 ```bash
 pip install -e ".[dev]"
 ```
 
-Run tests:
+Run the test suite:
 
 ```bash
 pytest
 ```
 
-The core test suite covers:
-
-- theme loading
-- inheritance
-- deep merging
-- validation
-- XDG paths
-- state handling
-- orchestrator behavior
-- rollback behavior
-- CLI availability
-- bundled example theme
+The project currently includes **45 automated tests** covering loading, inheritance, validation, state, XDG paths, orchestration, rollback behavior, CLI availability, and the bundled example theme.
 
 ## Documentation
 
-More details are available in:
-
-```text
-docs/installation.md
-docs/themes.md
-docs/architecture.md
-```
-
-## Migration
-
-Older installations using:
-
-```text
-~/.config/hypr/theme-engine
-```
-
-can be migrated by the installer.
-
-Existing configuration files are backed up before integration changes are made.
-
-Keep the old installation until the migrated setup has been verified.
+- `docs/installation.md`
+- `docs/themes.md`
+- `docs/architecture.md`
 
 ## License
 
