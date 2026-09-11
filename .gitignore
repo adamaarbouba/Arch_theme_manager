@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+
+# Tests
+.pytest_cache/
+.coverage
+
+# Runtime state
+generated/
+state/
+
+# Editor
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store

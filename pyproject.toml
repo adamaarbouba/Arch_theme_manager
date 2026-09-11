@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "arch-theme-manager"
+version = "0.1.0"
+description = "A modular theme orchestrator for Hyprland desktops"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+
+authors = [
+    { name = "Adam Aarbouba" }
+]
+
+keywords = [
+    "arch-linux",
+    "hyprland",
+    "theme-manager",
+    "waybar",
+    "swaync",
+    "hyprpaper",
+    "kitty",
+]
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: POSIX :: Linux",
+]
+
+
+[project.scripts]
+themectl = "arch_theme_manager.cli:main"
+
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9",
+]
