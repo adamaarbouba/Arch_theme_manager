@@ -12,6 +12,13 @@ Arch Theme Manager applies a single theme across multiple desktop components fro
   <img src="assets/demo.png" alt="Orbital desktop preview" width="900">
 </p>
 
+
+### Theme Manager Health Check
+
+<p align="center">
+  <img src="assets/doctor.png" alt="themectl doctor health check" width="900">
+</p>
+
 ## Supported Integrations
 
 - Hyprland
