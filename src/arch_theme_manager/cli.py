@@ -20,6 +20,10 @@ from .core.theme_remover import (
     ThemeRemoveError,
     ThemeRemover,
 )
+from .core.theme_renamer import (
+    ThemeRenameError,
+    ThemeRenamer,
+)
 from .core.validator import (
     ThemeValidationError,
     ThemeValidator,
@@ -39,6 +43,7 @@ orchestrator = None
 doctor = None
 installer = None
 remover = None
+renamer = None
 
 
 # ============================================================
@@ -53,6 +58,7 @@ def initialize() -> None:
     global doctor
     global installer
     global remover
+    global renamer
 
     ensure_runtime_dirs()
 
@@ -86,6 +92,11 @@ def initialize() -> None:
     )
 
     remover = ThemeRemover(
+        themes_dir(),
+        state,
+    )
+
+    renamer = ThemeRenamer(
         themes_dir(),
         state,
     )
@@ -285,6 +296,23 @@ def command_remove_theme(args):
 
     print(
         f"Removed theme '{theme_name}'."
+    )
+
+
+# ============================================================
+# RENAME THEME
+# ============================================================
+
+def command_rename_theme(args):
+    new_name = renamer.rename(
+        args.old_name,
+        args.new_name,
+    )
+
+    print(
+        f"Renamed theme "
+        f"'{args.old_name}' "
+        f"to '{new_name}'."
     )
 
 
@@ -514,6 +542,36 @@ def build_parser():
     )
 
     # --------------------------------------------------------
+    # RENAME THEME
+    # --------------------------------------------------------
+
+    rename_parser = (
+        subcommands.add_parser(
+            "rename-theme",
+            help=(
+                "Rename an installed theme"
+            ),
+            description=(
+                "Rename an installed theme"
+            ),
+        )
+    )
+
+    rename_parser.add_argument(
+        "old_name",
+        help="Current theme name",
+    )
+
+    rename_parser.add_argument(
+        "new_name",
+        help="New theme name",
+    )
+
+    rename_parser.set_defaults(
+        function=command_rename_theme,
+    )
+
+    # --------------------------------------------------------
     # DOCTOR
     # --------------------------------------------------------
 
@@ -556,6 +614,7 @@ def main():
         ThemeApplyError,
         ThemeInstallError,
         ThemeRemoveError,
+        ThemeRenameError,
     ) as exc:
         print(
             f"Error: {exc}",
