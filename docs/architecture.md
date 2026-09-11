@@ -1,6 +1,6 @@
 # Architecture
 
-Arch Theme Manager separates theme data, validation, orchestration, state, and desktop-specific integrations.
+Arch Theme Manager separates theme data, validation, orchestration, state, theme management, and desktop-specific integrations.
 
 ## High-Level Flow
 
@@ -28,40 +28,40 @@ ThemeOrchestrator
 
 ## Loader
 
-The loader is responsible for:
+The loader handles:
 
-- discovering installed themes
-- reading `theme.json`
-- resolving inheritance
-- deep-merging inherited values
-- detecting circular inheritance
-- attaching internal metadata such as the theme directory
+```text
+theme discovery
+manifest loading
+inheritance
+deep merging
+circular inheritance detection
+resolved theme metadata
+```
 
-Theme directories beginning with `_` are treated as internal base themes and are not included in normal theme rotation.
+Theme directories beginning with `_` are treated as internal base themes and are excluded from normal rotation.
 
 ## Validator
 
-The validator checks a resolved theme before anything is applied.
+Themes are validated before desktop state is modified.
 
-It validates:
+Validation includes:
 
-- required colors
-- hexadecimal color format
-- wallpaper configuration
-- Hyprpaper settings
-- window rounding
-- rounding power
-- opacity
-- border size
-- monitor type
-
-Validation happens before desktop state is modified.
+```text
+required colors
+hexadecimal color values
+wallpaper settings
+Hyprpaper configuration
+window rounding
+rounding power
+opacity
+border size
+monitor type
+```
 
 ## Orchestrator
 
-The orchestrator coordinates theme application.
-
-The normal flow is:
+Normal application flow:
 
 ```text
 load
@@ -73,15 +73,51 @@ apply adapters
 save state
 ```
 
-State is saved only after a successful theme application.
+State is written only after a successful application.
 
-If an adapter fails, the orchestrator attempts a compensating rollback by re-applying the previously active theme.
+If an adapter fails, the orchestrator attempts a compensating rollback using the previously active theme.
 
-This is not a fully atomic desktop transaction, because external programs are changed independently, but it provides recovery from partial application failures.
+This is not a fully atomic desktop transaction because external desktop programs are modified independently.
+
+## Theme Management
+
+Theme management is separated from theme application.
+
+### ThemeInstaller
+
+Installs a theme from an external directory.
+
+It uses a temporary staging directory, validates the copied theme, then moves it into the final theme directory.
+
+### ThemeCopier
+
+Duplicates an existing installed theme.
+
+It:
+
+```text
+copies the source into staging
+updates the manifest name
+validates the copied theme
+moves the copy into its final directory
+cleans failed staging data
+```
+
+### ThemeRenamer
+
+Renames an installed theme and updates its manifest.
+
+If the renamed theme appears in persistent state, the current or previous theme reference is updated.
+
+### ThemeRemover
+
+Removes installed themes.
+
+The currently active theme is protected unless forced removal is requested.
+
+Forced removal of the active theme clears persistent theme state.
 
 ## Adapters
-
-Each supported desktop component has its own adapter.
 
 ### Hyprpaper
 
@@ -95,7 +131,7 @@ Generates:
 waybar-theme.css
 ```
 
-Then reloads Waybar.
+and reloads Waybar.
 
 ### SwayNC
 
@@ -105,7 +141,7 @@ Generates:
 swaync-theme.css
 ```
 
-Then reloads SwayNC CSS.
+and reloads SwayNC CSS.
 
 ### Hyprland
 
@@ -115,15 +151,7 @@ Generates:
 hyprland-theme.lua
 ```
 
-The generated file controls settings such as:
-
-- border colors
-- border size
-- rounding
-- opacity
-- shadow color
-
-Hyprland is reloaded after generation.
+It controls settings such as border colors, border size, rounding, opacity, and shadow color.
 
 ### Kitty
 
@@ -133,7 +161,7 @@ Generates:
 kitty-theme.conf
 ```
 
-Existing Kitty instances are updated through Kitty remote control sockets.
+Existing Kitty instances are updated through remote-control sockets.
 
 ### Zsh
 
@@ -143,9 +171,9 @@ Generates:
 zsh-theme.zsh
 ```
 
-Interactive Zsh shells register their process IDs in the runtime directory.
+Interactive Zsh processes register themselves in the runtime directory.
 
-After a theme change, the adapter sends `SIGUSR1` to registered Zsh processes so they can reload the prompt immediately.
+Theme changes signal registered shells with `SIGUSR1`, allowing prompt colors to update immediately.
 
 ### Hyprlock
 
@@ -155,7 +183,7 @@ Generates:
 hyprlock-theme.conf
 ```
 
-This includes theme colors and the resolved wallpaper path.
+This contains theme colors and the resolved wallpaper path.
 
 ### Hyprtoolkit
 
@@ -165,21 +193,21 @@ Generates:
 hyprtoolkit-theme.conf
 ```
 
-Hyprlauncher is restarted so the new toolkit colors become active.
+Hyprlauncher is restarted after changes so the new colors become active.
 
 ## Generated Files
 
-Generated configuration fragments are stored in:
+Generated files are stored under:
 
 ```text
 ~/.config/arch-theme-manager/generated/
 ```
 
-Desktop applications reference these files using stable symlinks or configuration includes.
+Desktop applications reference them through stable symlinks or configuration includes.
 
 ## Theme Storage
 
-User themes are stored in:
+Installed themes live at:
 
 ```text
 ~/.config/arch-theme-manager/themes/
@@ -187,49 +215,40 @@ User themes are stored in:
 
 ## State
 
-Persistent theme state is stored in:
+Persistent state lives at:
 
 ```text
 ~/.local/state/arch-theme-manager/current.json
 ```
 
-The state tracks:
+It stores:
 
 ```text
 current
 previous
 ```
 
-This supports commands such as:
-
-```bash
-themectl current
-themectl previous
-```
-
 ## Runtime State
 
-Temporary process information is stored under:
+Transient runtime information lives under:
 
 ```text
 $XDG_RUNTIME_DIR/arch-theme-manager/
 ```
 
-If `XDG_RUNTIME_DIR` is unavailable, the fallback is:
+Fallback:
 
 ```text
 /tmp/arch-theme-manager-UID/
 ```
 
-For example, registered Zsh processes live under:
+Registered Zsh shells are stored under:
 
 ```text
 $XDG_RUNTIME_DIR/arch-theme-manager/zsh/
 ```
 
 ## XDG Layout
-
-Arch Theme Manager uses:
 
 ```text
 Configuration:
@@ -238,7 +257,7 @@ Configuration:
 State:
 ~/.local/state/arch-theme-manager/
 
-Application installation:
+Application:
 ~/.local/share/arch-theme-manager/
 
 CLI:
@@ -247,13 +266,7 @@ CLI:
 
 ## CLI
 
-The CLI is exposed through:
-
-```text
-themectl
-```
-
-Supported commands:
+Theme application commands:
 
 ```bash
 themectl list
@@ -263,6 +276,20 @@ themectl apply THEME
 themectl current
 themectl next
 themectl previous
+```
+
+Theme management commands:
+
+```bash
+themectl install-theme PATH
+themectl copy-theme SOURCE NEW_NAME
+themectl rename-theme OLD_NAME NEW_NAME
+themectl remove-theme THEME
+```
+
+System health:
+
+```bash
 themectl doctor
 ```
 
@@ -270,13 +297,15 @@ themectl doctor
 
 `themectl doctor` checks:
 
-- installed themes
-- theme validity
-- current state
-- required commands
-- running processes
-- generated files
-- integration symlinks
-- configuration includes
-- Hyprland IPC
-- Hyprland configuration errors
+```text
+installed themes
+theme validity
+current state
+required commands
+running processes
+generated files
+integration symlinks
+configuration includes
+Hyprland IPC
+Hyprland configuration errors
+```

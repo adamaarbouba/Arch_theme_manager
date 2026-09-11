@@ -12,6 +12,10 @@ from .core.orchestrator import (
     ThemeOrchestrator,
 )
 from .core.state import ThemeState
+from .core.theme_copier import (
+    ThemeCopier,
+    ThemeCopyError,
+)
 from .core.theme_installer import (
     ThemeInstallError,
     ThemeInstaller,
@@ -44,6 +48,7 @@ doctor = None
 installer = None
 remover = None
 renamer = None
+copier = None
 
 
 # ============================================================
@@ -59,6 +64,7 @@ def initialize() -> None:
     global installer
     global remover
     global renamer
+    global copier
 
     ensure_runtime_dirs()
 
@@ -99,6 +105,11 @@ def initialize() -> None:
     renamer = ThemeRenamer(
         themes_dir(),
         state,
+    )
+
+    copier = ThemeCopier(
+        themes_dir(),
+        validator,
     )
 
 
@@ -317,6 +328,23 @@ def command_rename_theme(args):
 
 
 # ============================================================
+# COPY THEME
+# ============================================================
+
+def command_copy_theme(args):
+    new_name = copier.copy(
+        args.source,
+        args.new_name,
+    )
+
+    print(
+        f"Copied theme "
+        f"'{args.source}' "
+        f"to '{new_name}'."
+    )
+
+
+# ============================================================
 # DOCTOR
 # ============================================================
 
@@ -345,10 +373,6 @@ def build_parser():
         required=True,
     )
 
-    # --------------------------------------------------------
-    # LIST
-    # --------------------------------------------------------
-
     list_parser = subcommands.add_parser(
         "list",
         help="List installed themes",
@@ -357,10 +381,6 @@ def build_parser():
     list_parser.set_defaults(
         function=command_list,
     )
-
-    # --------------------------------------------------------
-    # SHOW
-    # --------------------------------------------------------
 
     show_parser = subcommands.add_parser(
         "show",
@@ -378,10 +398,6 @@ def build_parser():
         function=command_show,
     )
 
-    # --------------------------------------------------------
-    # VALIDATE
-    # --------------------------------------------------------
-
     validate_parser = (
         subcommands.add_parser(
             "validate",
@@ -397,10 +413,6 @@ def build_parser():
         function=command_validate,
     )
 
-    # --------------------------------------------------------
-    # APPLY
-    # --------------------------------------------------------
-
     apply_parser = subcommands.add_parser(
         "apply",
         help="Apply a theme",
@@ -414,10 +426,6 @@ def build_parser():
         function=command_apply,
     )
 
-    # --------------------------------------------------------
-    # CURRENT
-    # --------------------------------------------------------
-
     current_parser = (
         subcommands.add_parser(
             "current",
@@ -429,10 +437,6 @@ def build_parser():
         function=command_current,
     )
 
-    # --------------------------------------------------------
-    # NEXT
-    # --------------------------------------------------------
-
     next_parser = subcommands.add_parser(
         "next",
         help="Apply the next theme",
@@ -441,10 +445,6 @@ def build_parser():
     next_parser.set_defaults(
         function=command_next,
     )
-
-    # --------------------------------------------------------
-    # PREVIOUS
-    # --------------------------------------------------------
 
     previous_parser = (
         subcommands.add_parser(
@@ -456,10 +456,6 @@ def build_parser():
     previous_parser.set_defaults(
         function=command_previous,
     )
-
-    # --------------------------------------------------------
-    # INSTALL THEME
-    # --------------------------------------------------------
 
     install_parser = (
         subcommands.add_parser(
@@ -504,10 +500,6 @@ def build_parser():
         function=command_install_theme,
     )
 
-    # --------------------------------------------------------
-    # REMOVE THEME
-    # --------------------------------------------------------
-
     remove_parser = (
         subcommands.add_parser(
             "remove-theme",
@@ -541,10 +533,6 @@ def build_parser():
         function=command_remove_theme,
     )
 
-    # --------------------------------------------------------
-    # RENAME THEME
-    # --------------------------------------------------------
-
     rename_parser = (
         subcommands.add_parser(
             "rename-theme",
@@ -571,9 +559,31 @@ def build_parser():
         function=command_rename_theme,
     )
 
-    # --------------------------------------------------------
-    # DOCTOR
-    # --------------------------------------------------------
+    copy_parser = (
+        subcommands.add_parser(
+            "copy-theme",
+            help=(
+                "Copy an installed theme"
+            ),
+            description=(
+                "Copy an installed theme"
+            ),
+        )
+    )
+
+    copy_parser.add_argument(
+        "source",
+        help="Source theme name",
+    )
+
+    copy_parser.add_argument(
+        "new_name",
+        help="Name for the copied theme",
+    )
+
+    copy_parser.set_defaults(
+        function=command_copy_theme,
+    )
 
     doctor_parser = (
         subcommands.add_parser(
@@ -615,6 +625,7 @@ def main():
         ThemeInstallError,
         ThemeRemoveError,
         ThemeRenameError,
+        ThemeCopyError,
     ) as exc:
         print(
             f"Error: {exc}",

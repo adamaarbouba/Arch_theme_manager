@@ -143,36 +143,6 @@ A theme can inherit from it:
 
 Inherited dictionaries are deep-merged.
 
-For example, if `_base` contains:
-
-```json
-{
-  "window": {
-    "rounding": 10,
-    "opacity": 0.90
-  }
-}
-```
-
-and the child contains:
-
-```json
-{
-  "extends": "_base",
-
-  "window": {
-    "opacity": 0.96
-  }
-}
-```
-
-the resolved result keeps:
-
-```text
-rounding = 10
-opacity  = 0.96
-```
-
 Directories beginning with `_` are internal themes and are not included in normal theme rotation.
 
 ## Listing Themes
@@ -185,13 +155,11 @@ The active theme is marked with `*`.
 
 ## Showing a Theme
 
-Show the fully resolved configuration:
-
 ```bash
 themectl show portal
 ```
 
-Inherited values are already merged in the output.
+This shows the fully resolved theme configuration, including inherited values.
 
 ## Validating a Theme
 
@@ -199,7 +167,7 @@ Inherited values are already merged in the output.
 themectl validate portal
 ```
 
-Validation checks the theme before it is applied.
+Validation occurs before a theme is applied or installed.
 
 ## Applying a Theme
 
@@ -215,13 +183,13 @@ themectl current
 
 ## Theme Rotation
 
-Move to the next theme:
+Next theme:
 
 ```bash
 themectl next
 ```
 
-Move to the previous theme:
+Previous theme:
 
 ```bash
 themectl previous
@@ -231,64 +199,80 @@ Theme rotation automatically uses the currently installed themes.
 
 ## Installing a Theme
 
-Install a theme from a directory:
+Install a theme directory:
 
 ```bash
 themectl install-theme /path/to/theme
 ```
 
-The directory name is used as the installed theme name by default.
-
-Example:
-
-```bash
-themectl install-theme ~/Downloads/my-theme
-```
-
-Install it using a different name:
+Install using a custom name:
 
 ```bash
 themectl install-theme \
-    ~/Downloads/my-theme \
+    /path/to/theme \
     --name portal
 ```
 
-If a theme with that name already exists, installation is refused.
-
-To replace an existing theme:
+Replace an existing theme:
 
 ```bash
 themectl install-theme \
-    ~/Downloads/my-theme \
+    /path/to/theme \
     --name portal \
     --force
 ```
 
-Themes are validated before installation is completed.
+Themes are validated before installation completes.
 
-A failed installation does not leave a partially installed theme behind.
+Failed installations do not leave partially installed themes behind.
 
-## Removing a Theme
+## Copying a Theme
 
-Remove an installed theme:
-
-```bash
-themectl remove-theme portal
-```
-
-The currently active theme is protected and cannot normally be removed.
-
-If removal of the active theme is intentional:
+Duplicate an existing installed theme:
 
 ```bash
-themectl remove-theme portal --force
+themectl copy-theme portal portal-copy
 ```
 
-Forced removal of the current theme also clears the current theme state.
+The source remains unchanged.
 
-Internal themes such as `_base` cannot be removed through `remove-theme`.
+The copied theme receives:
 
-Symlinked theme directories are also refused for safety.
+```text
+a new directory
+a copied wallpaper
+a copied manifest
+an updated name field
+```
+
+For example:
+
+```bash
+themectl copy-theme orbital orbital-edit
+```
+
+Now both themes exist:
+
+```text
+orbital/
+orbital-edit/
+```
+
+You can edit:
+
+```text
+~/.config/arch-theme-manager/themes/orbital-edit/theme.json
+```
+
+without modifying the original `orbital` theme.
+
+The copy is validated before installation is completed.
+
+If validation fails, the copied theme is not installed and temporary staging files are cleaned up.
+
+Internal themes such as `_base` cannot be copied through `copy-theme`.
+
+Symlinked source themes are refused for safety.
 
 ## Renaming a Theme
 
@@ -298,7 +282,7 @@ Rename an installed theme:
 themectl rename-theme portal gateway
 ```
 
-This changes:
+This updates:
 
 ```text
 theme directory name
@@ -307,44 +291,48 @@ current theme state
 previous theme state
 ```
 
-when those state values reference the renamed theme.
+when applicable.
 
 The command refuses to overwrite an existing theme.
 
-Example:
+Internal themes cannot be renamed.
+
+## Removing a Theme
+
+Remove an installed theme:
 
 ```bash
-themectl rename-theme orbital space
+themectl remove-theme portal
 ```
 
-Afterward:
+The active theme is protected.
+
+To intentionally remove the active theme:
 
 ```bash
-themectl list
+themectl remove-theme portal --force
 ```
 
-will show:
+Forced removal clears the active theme state.
 
-```text
-space
-```
-
-instead of:
-
-```text
-orbital
-```
-
-Internal themes beginning with `_` cannot be renamed.
+Internal themes and symlinked themes are protected from removal.
 
 ## Creating a Theme
 
-Copy the bundled example:
+A simple starting point is the bundled example:
 
 ```bash
-cp -r \
+themectl install-theme \
     themes/example \
-    ~/.config/arch-theme-manager/themes/my-theme
+    --name my-theme
+```
+
+Or copy an existing installed theme:
+
+```bash
+themectl copy-theme \
+    orbital \
+    my-theme
 ```
 
 Then edit:
@@ -353,21 +341,13 @@ Then edit:
 ~/.config/arch-theme-manager/themes/my-theme/theme.json
 ```
 
-Or use the installer:
-
-```bash
-themectl install-theme \
-    themes/example \
-    --name my-theme
-```
-
-Validate it:
+Validate:
 
 ```bash
 themectl validate my-theme
 ```
 
-Apply it:
+Apply:
 
 ```bash
 themectl apply my-theme
@@ -375,14 +355,15 @@ themectl apply my-theme
 
 ## Theme Management Workflow
 
-A typical workflow is:
+Example workflow:
 
 ```bash
-themectl install-theme /path/to/theme --name new-theme
-themectl validate new-theme
-themectl apply new-theme
-themectl rename-theme new-theme final-name
-themectl remove-theme final-name
+themectl install-theme themes/example --name base-custom
+themectl copy-theme base-custom experiment
+themectl validate experiment
+themectl apply experiment
+themectl rename-theme experiment finished-theme
+themectl remove-theme finished-theme
 ```
 
 Use:
@@ -391,4 +372,4 @@ Use:
 themectl doctor
 ```
 
-at any time to check the health of the theme manager and its desktop integrations.
+at any time to inspect the health of Arch Theme Manager and its desktop integrations.

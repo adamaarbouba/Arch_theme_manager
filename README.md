@@ -37,8 +37,9 @@ Arch Theme Manager applies a single theme across multiple desktop components fro
 - Deep configuration merging
 - Theme validation
 - Theme installation
-- Theme removal
+- Theme copying
 - Theme renaming
+- Theme removal
 - Current and previous theme state
 - Compensating rollback
 - XDG-compliant paths
@@ -143,7 +144,19 @@ themectl install-theme \
     --force
 ```
 
-Remove a theme:
+Copy an installed theme:
+
+```bash
+themectl copy-theme portal portal-copy
+```
+
+Rename an installed theme:
+
+```bash
+themectl rename-theme portal gateway
+```
+
+Remove an installed theme:
 
 ```bash
 themectl remove-theme portal
@@ -153,12 +166,6 @@ Force removal of the active theme:
 
 ```bash
 themectl remove-theme portal --force
-```
-
-Rename a theme:
-
-```bash
-themectl rename-theme portal gateway
 ```
 
 Check the system:
@@ -191,10 +198,12 @@ themes/example/
 
 ## Theme Management
 
-Arch Theme Manager supports the basic theme lifecycle directly through the CLI:
+Arch Theme Manager supports the theme lifecycle directly through the CLI:
 
 ```text
 install
+   ↓
+copy
    ↓
 validate
    ↓
@@ -205,15 +214,18 @@ rename
 remove
 ```
 
-For example:
+Example:
 
 ```bash
 themectl install-theme themes/example --name custom
-themectl validate custom
-themectl apply custom
-themectl rename-theme custom my-theme
-themectl remove-theme my-theme
+themectl copy-theme custom custom-alt
+themectl validate custom-alt
+themectl apply custom-alt
+themectl rename-theme custom-alt final-theme
+themectl remove-theme final-theme
 ```
+
+`copy-theme` leaves the original theme untouched and creates a separate theme directory with an updated manifest name.
 
 The currently active theme is protected from accidental removal unless `--force` is explicitly used.
 
@@ -260,7 +272,7 @@ pytest
 Run a specific test module:
 
 ```bash
-pytest -v tests/test_theme_installer.py
+pytest -v tests/test_theme_copier.py
 ```
 
 ## Documentation
