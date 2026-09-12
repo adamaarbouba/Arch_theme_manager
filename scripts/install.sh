@@ -2,16 +2,14 @@
 
 set -euo pipefail
 
-
 # ============================================================
 # PROJECT
 # ============================================================
 
 PROJECT_DIR="$(
-    cd "$(dirname "${BASH_SOURCE[0]}")/.." &&
+  cd "$(dirname "${BASH_SOURCE[0]}")/.." &&
     pwd
 )"
-
 
 # ============================================================
 # PATHS
@@ -39,170 +37,160 @@ OLD_ENGINE="$CONFIG_HOME/hypr/theme-engine"
 BACKUP_ROOT="$ATM_CONFIG/backups"
 BACKUP_DIR="$BACKUP_ROOT/$(date +%Y%m%d-%H%M%S)"
 
-
 # ============================================================
 # OUTPUT
 # ============================================================
 
 info() {
-    printf '[INFO] %s\n' "$1"
+  printf '[INFO] %s\n' "$1"
 }
 
 ok() {
-    printf '[OK]   %s\n' "$1"
+  printf '[OK]   %s\n' "$1"
 }
 
 warn() {
-    printf '[WARN] %s\n' "$1"
+  printf '[WARN] %s\n' "$1"
 }
 
 fail() {
-    printf '[FAIL] %s\n' "$1" >&2
-    exit 1
+  printf '[FAIL] %s\n' "$1" >&2
+  exit 1
 }
-
 
 # ============================================================
 # FILE HELPERS
 # ============================================================
 
 ensure_file() {
-    local file="$1"
+  local file="$1"
 
-    mkdir -p "$(dirname "$file")"
+  mkdir -p "$(dirname "$file")"
 
-    if [[ ! -e "$file" ]]; then
-        touch "$file"
-    fi
+  if [[ ! -e "$file" ]]; then
+    touch "$file"
+  fi
 }
-
 
 backup_file() {
-    local file="$1"
+  local file="$1"
 
-    if [[ ! -e "$file" && ! -L "$file" ]]; then
-        return
-    fi
+  if [[ ! -e "$file" && ! -L "$file" ]]; then
+    return
+  fi
 
-    local relative
-    local destination
+  local relative
+  local destination
 
-    if [[ "$file" == "$HOME/"* ]]; then
-        relative="${file#$HOME/}"
-    else
-        relative="$(basename "$file")"
-    fi
+  if [[ "$file" == "$HOME/"* ]]; then
+    relative="${file#$HOME/}"
+  else
+    relative="$(basename "$file")"
+  fi
 
-    destination="$BACKUP_DIR/$relative"
+  destination="$BACKUP_DIR/$relative"
 
-    mkdir -p "$(dirname "$destination")"
+  mkdir -p "$(dirname "$destination")"
 
-    # Do not back up the same file twice.
-    if [[ -e "$destination" || -L "$destination" ]]; then
-        return
-    fi
+  # Do not back up the same file twice.
+  if [[ -e "$destination" || -L "$destination" ]]; then
+    return
+  fi
 
-    cp -a -- "$file" "$destination"
+  cp -a -- "$file" "$destination"
 
-    ok "Backed up $file"
+  ok "Backed up $file"
 }
-
 
 append_once() {
-    local file="$1"
-    local line="$2"
+  local file="$1"
+  local line="$2"
 
-    ensure_file "$file"
+  ensure_file "$file"
 
-    if grep -Fqx "$line" "$file"; then
-        return
-    fi
+  if grep -Fqx "$line" "$file"; then
+    return
+  fi
 
-    printf '\n%s\n' "$line" >> "$file"
+  printf '\n%s\n' "$line" >>"$file"
 
-    ok "Updated $file"
+  ok "Updated $file"
 }
-
 
 prepend_once() {
-    local file="$1"
-    local line="$2"
+  local file="$1"
+  local line="$2"
 
-    ensure_file "$file"
+  ensure_file "$file"
 
-    if grep -Fqx "$line" "$file"; then
-        return
-    fi
+  if grep -Fqx "$line" "$file"; then
+    return
+  fi
 
-    local temporary
-    temporary="$(mktemp)"
+  local temporary
+  temporary="$(mktemp)"
 
-    {
-        printf '%s\n\n' "$line"
-        cat "$file"
-    } > "$temporary"
+  {
+    printf '%s\n\n' "$line"
+    cat "$file"
+  } >"$temporary"
 
-    cat "$temporary" > "$file"
-    rm -f "$temporary"
+  cat "$temporary" >"$file"
+  rm -f "$temporary"
 
-    ok "Updated $file"
+  ok "Updated $file"
 }
-
 
 ensure_css_theme_import() {
-    local file="$1"
+  local file="$1"
 
-    ensure_file "$file"
+  ensure_file "$file"
 
-    if grep -Eq \
-        '@import[[:space:]]+(url\()?["'\'']theme\.css["'\'']\)?;' \
-        "$file"
-    then
-        return
-    fi
+  if grep -Eq \
+    '@import[[:space:]]+(url\()?["'\'']theme\.css["'\'']\)?;' \
+    "$file"; then
+    return
+  fi
 
-    prepend_once \
-        "$file" \
-        '@import "theme.css";'
+  prepend_once \
+    "$file" \
+    '@import "theme.css";'
 }
-
 
 link_generated() {
-    local target="$1"
-    local link="$2"
+  local target="$1"
+  local link="$2"
 
-    mkdir -p "$(dirname "$link")"
+  mkdir -p "$(dirname "$link")"
 
-    if [[ -e "$link" || -L "$link" ]]; then
-        backup_file "$link"
-        rm -f "$link"
-    fi
+  if [[ -e "$link" || -L "$link" ]]; then
+    backup_file "$link"
+    rm -f "$link"
+  fi
 
-    ln -s "$target" "$link"
+  ln -s "$target" "$link"
 
-    ok "$link -> $target"
+  ok "$link -> $target"
 }
-
 
 # ============================================================
 # ZSH MIGRATION
 # ============================================================
 
 remove_old_zsh_theme_block() {
-    local zshrc="$HOME/.zshrc"
+  local zshrc="$HOME/.zshrc"
 
-    [[ -f "$zshrc" ]] || return
+  [[ -f "$zshrc" ]] || return
 
-    if ! grep -Fq \
-        'THEME_FILE="$HOME/.config/hypr/theme-engine/generated/zsh-theme.zsh"' \
-        "$zshrc"
-    then
-        return
-    fi
+  if ! grep -Fq \
+    'THEME_FILE="$HOME/.config/hypr/theme-engine/generated/zsh-theme.zsh"' \
+    "$zshrc"; then
+    return
+  fi
 
-    info "Removing old inline Zsh theme block"
+  info "Removing old inline Zsh theme block"
 
-    python - "$zshrc" <<'PY'
+  python - "$zshrc" <<'PY'
 from pathlib import Path
 import sys
 
@@ -302,9 +290,8 @@ path.write_text(
 )
 PY
 
-    ok "Removed old inline Zsh theme block"
+  ok "Removed old inline Zsh theme block"
 }
-
 
 # ============================================================
 # START
@@ -314,23 +301,24 @@ echo
 info "Arch Theme Manager migration installer"
 echo
 
-
 # ============================================================
 # PRECHECK
 # ============================================================
 
 command -v python >/dev/null 2>&1 ||
-    fail "Python is required"
+  fail "Python is required"
 
 python -m venv --help >/dev/null 2>&1 ||
-    fail "Python venv support is required"
+  fail "Python venv support is required"
 
 [[ -f "$PROJECT_DIR/pyproject.toml" ]] ||
-    fail "pyproject.toml not found"
+  fail "pyproject.toml not found"
 
 [[ -f "$PROJECT_DIR/integrations/zsh/theme.zsh" ]] ||
-    fail "Zsh integration template not found"
+  fail "Zsh integration template not found"
 
+[[ -f "$PROJECT_DIR/integrations/nvim/arch-theme-manager.lua" ]] ||
+  fail "Neovim integration template not found"
 
 # ============================================================
 # CREATE DIRECTORIES
@@ -346,7 +334,6 @@ mkdir -p "$ATM_STATE"
 
 mkdir -p "$LOCAL_BIN"
 mkdir -p "$BACKUP_DIR"
-
 
 # ============================================================
 # BACKUP CURRENT DESKTOP CONFIG
@@ -368,10 +355,11 @@ backup_file "$CONFIG_HOME/swaync/theme.css"
 backup_file "$CONFIG_HOME/kitty/kitty.conf"
 backup_file "$CONFIG_HOME/kitty/theme.conf"
 
+backup_file "$CONFIG_HOME/nvim/plugin/arch-theme-manager.lua"
+
 backup_file "$HOME/.zshrc"
 
 echo
-
 
 # ============================================================
 # INSTALL APPLICATION VENV
@@ -380,40 +368,34 @@ echo
 info "Installing Arch Theme Manager"
 
 if [[ ! -x "$ATM_VENV/bin/python" ]]; then
-    python -m venv "$ATM_VENV"
+  python -m venv "$ATM_VENV"
 
-    ok "Created application virtual environment"
+  ok "Created application virtual environment"
 fi
-
 
 "$ATM_VENV/bin/python" \
-    -m pip install \
-    --disable-pip-version-check \
-    --upgrade \
-    "$PROJECT_DIR"
-
+  -m pip install \
+  --disable-pip-version-check \
+  --upgrade \
+  "$PROJECT_DIR"
 
 if [[ ! -x "$ATM_VENV/bin/themectl" ]]; then
-    fail "Package installed but themectl was not created"
+  fail "Package installed but themectl was not created"
 fi
 
-
 ln -sfn \
-    "$ATM_VENV/bin/themectl" \
-    "$ATM_BIN"
-
+  "$ATM_VENV/bin/themectl" \
+  "$ATM_BIN"
 
 ok "Installed themectl -> $ATM_BIN"
-
 
 # ============================================================
 # SHELL PATH
 # ============================================================
 
 append_once \
-    "$HOME/.zshrc" \
-    'export PATH="$HOME/.local/bin:$PATH"'
-
+  "$HOME/.zshrc" \
+  'export PATH="$HOME/.local/bin:$PATH"'
 
 # ============================================================
 # MIGRATE / INSTALL THEMES
@@ -421,29 +403,28 @@ append_once \
 
 if [[ -z "$(find "$ATM_THEMES" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]]; then
 
-    if [[ -d "$OLD_ENGINE/themes" ]]; then
-        info "Migrating themes from old theme engine"
+  if [[ -d "$OLD_ENGINE/themes" ]]; then
+    info "Migrating themes from old theme engine"
 
-        cp -a \
-            "$OLD_ENGINE/themes/." \
-            "$ATM_THEMES/"
+    cp -a \
+      "$OLD_ENGINE/themes/." \
+      "$ATM_THEMES/"
 
-        ok "Themes migrated"
+    ok "Themes migrated"
 
-    elif [[ -f "$PROJECT_DIR/themes/example/theme.json" ]]; then
-        info "Installing bundled example theme"
+  elif [[ -f "$PROJECT_DIR/themes/example/theme.json" ]]; then
+    info "Installing bundled example theme"
 
-        cp -a \
-            "$PROJECT_DIR/themes/example" \
-            "$ATM_THEMES/example"
+    cp -a \
+      "$PROJECT_DIR/themes/example" \
+      "$ATM_THEMES/example"
 
-        ok "Example theme installed"
-    fi
+    ok "Example theme installed"
+  fi
 fi
 
-
 if [[ -z "$(find "$ATM_THEMES" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]]; then
-    fail "No themes found in $ATM_THEMES"
+  fail "No themes found in $ATM_THEMES"
 fi
 
 # ============================================================
@@ -451,21 +432,18 @@ fi
 # ============================================================
 
 CURRENT_THEME="$(
-    "$ATM_BIN" current 2>/dev/null || true
+  "$ATM_BIN" current 2>/dev/null || true
 )"
 
-
 if [[ "$CURRENT_THEME" == "No theme is currently active." ]]; then
-    CURRENT_THEME=""
+  CURRENT_THEME=""
 fi
-
 
 # If the new manager has no state yet, migrate the old state.
 if [[ -z "$CURRENT_THEME" ]] &&
-   [[ -f "$OLD_ENGINE/state/current.json" ]]
-then
-    CURRENT_THEME="$(
-        python - "$OLD_ENGINE/state/current.json" <<'PY'
+  [[ -f "$OLD_ENGINE/state/current.json" ]]; then
+  CURRENT_THEME="$(
+    python - "$OLD_ENGINE/state/current.json" <<'PY'
 from pathlib import Path
 import json
 import sys
@@ -488,32 +466,27 @@ try:
 except Exception:
     pass
 PY
-    )"
+  )"
 fi
-
 
 # Final fallback: first installed theme.
 if [[ -z "$CURRENT_THEME" ]]; then
-    CURRENT_THEME="$(
-        "$ATM_BIN" list \
-        | sed 's/^[* ]*//' \
-        | head -n 1
-    )"
+  CURRENT_THEME="$(
+    "$ATM_BIN" list |
+      sed 's/^[* ]*//' |
+      head -n 1
+  )"
 fi
-
 
 if [[ -z "$CURRENT_THEME" ]]; then
-    fail "Could not determine an initial theme"
+  fail "Could not determine an initial theme"
 fi
-
 
 if ! "$ATM_BIN" validate "$CURRENT_THEME" >/dev/null; then
-    fail "Theme '$CURRENT_THEME' is invalid"
+  fail "Theme '$CURRENT_THEME' is invalid"
 fi
 
-
 ok "Current migration theme: $CURRENT_THEME"
-
 
 # ============================================================
 # FIRST GENERATION
@@ -525,7 +498,6 @@ info "Generating packaged theme files"
 
 ok "Generated packaged theme files"
 
-
 # ============================================================
 # HYPRLAND MIGRATION
 # ============================================================
@@ -534,17 +506,14 @@ HYPRLAND_CONFIG="$CONFIG_HOME/hypr/hyprland.lua"
 
 ensure_file "$HYPRLAND_CONFIG"
 
-
 # Replace old direct themectl path with the stable CLI path.
 sed -i \
-    's#\$HOME/.config/hypr/theme-engine/bin/themectl#\$HOME/.local/bin/themectl#g' \
-    "$HYPRLAND_CONFIG"
-
+  's#\$HOME/.config/hypr/theme-engine/bin/themectl#\$HOME/.local/bin/themectl#g' \
+  "$HYPRLAND_CONFIG"
 
 append_once \
-    "$HYPRLAND_CONFIG" \
-    'require("theme")'
-
+  "$HYPRLAND_CONFIG" \
+  'require("theme")'
 
 # ============================================================
 # HYPRLOCK MIGRATION
@@ -554,32 +523,27 @@ HYPRLOCK_CONFIG="$CONFIG_HOME/hypr/hyprlock.conf"
 
 ensure_file "$HYPRLOCK_CONFIG"
 
-
 sed -i \
-    's#\$HOME/.config/hypr/theme-engine/generated/hyprlock-theme.conf#\$HOME/.config/arch-theme-manager/generated/hyprlock-theme.conf#g' \
-    "$HYPRLOCK_CONFIG"
-
+  's#\$HOME/.config/hypr/theme-engine/generated/hyprlock-theme.conf#\$HOME/.config/arch-theme-manager/generated/hyprlock-theme.conf#g' \
+  "$HYPRLOCK_CONFIG"
 
 prepend_once \
-    "$HYPRLOCK_CONFIG" \
-    'source = $HOME/.config/arch-theme-manager/generated/hyprlock-theme.conf'
-
+  "$HYPRLOCK_CONFIG" \
+  'source = $HOME/.config/arch-theme-manager/generated/hyprlock-theme.conf'
 
 # ============================================================
 # WAYBAR
 # ============================================================
 
 ensure_css_theme_import \
-    "$CONFIG_HOME/waybar/style.css"
-
+  "$CONFIG_HOME/waybar/style.css"
 
 # ============================================================
 # SWAYNC
 # ============================================================
 
 ensure_css_theme_import \
-    "$CONFIG_HOME/swaync/style.css"
-
+  "$CONFIG_HOME/swaync/style.css"
 
 # ============================================================
 # KITTY
@@ -588,17 +552,16 @@ ensure_css_theme_import \
 KITTY_CONFIG="$CONFIG_HOME/kitty/kitty.conf"
 
 append_once \
-    "$KITTY_CONFIG" \
-    'include theme.conf'
+  "$KITTY_CONFIG" \
+  'include theme.conf'
 
 append_once \
-    "$KITTY_CONFIG" \
-    'allow_remote_control socket-only'
+  "$KITTY_CONFIG" \
+  'allow_remote_control socket-only'
 
 append_once \
-    "$KITTY_CONFIG" \
-    'listen_on unix:/tmp/kitty-theme-{kitty_pid}'
-
+  "$KITTY_CONFIG" \
+  'listen_on unix:/tmp/kitty-theme-{kitty_pid}'
 
 # ============================================================
 # ZSH
@@ -606,19 +569,31 @@ append_once \
 
 remove_old_zsh_theme_block
 
-
 cp \
-    "$PROJECT_DIR/integrations/zsh/theme.zsh" \
-    "$ATM_INTEGRATIONS/zsh.zsh"
-
+  "$PROJECT_DIR/integrations/zsh/theme.zsh" \
+  "$ATM_INTEGRATIONS/zsh.zsh"
 
 append_once \
-    "$HOME/.zshrc" \
-    'source "${XDG_CONFIG_HOME:-$HOME/.config}/arch-theme-manager/integrations/zsh.zsh"'
-
+  "$HOME/.zshrc" \
+  'source "${XDG_CONFIG_HOME:-$HOME/.config}/arch-theme-manager/integrations/zsh.zsh"'
 
 ok "Installed Zsh integration"
 
+# ============================================================
+# NEOVIM
+# ============================================================
+
+info "Installing Neovim integration"
+
+cp \
+  "$PROJECT_DIR/integrations/nvim/arch-theme-manager.lua" \
+  "$ATM_INTEGRATIONS/nvim.lua"
+
+link_generated \
+  "$ATM_INTEGRATIONS/nvim.lua" \
+  "$CONFIG_HOME/nvim/plugin/arch-theme-manager.lua"
+
+ok "Installed Neovim integration"
 
 # ============================================================
 # SWITCH GENERATED FILE LINKS
@@ -626,31 +601,25 @@ ok "Installed Zsh integration"
 
 info "Switching desktop integration links"
 
+link_generated \
+  "$ATM_GENERATED/hyprland-theme.lua" \
+  "$CONFIG_HOME/hypr/theme.lua"
 
 link_generated \
-    "$ATM_GENERATED/hyprland-theme.lua" \
-    "$CONFIG_HOME/hypr/theme.lua"
-
-
-link_generated \
-    "$ATM_GENERATED/hyprtoolkit-theme.conf" \
-    "$CONFIG_HOME/hypr/hyprtoolkit.conf"
-
+  "$ATM_GENERATED/hyprtoolkit-theme.conf" \
+  "$CONFIG_HOME/hypr/hyprtoolkit.conf"
 
 link_generated \
-    "$ATM_GENERATED/waybar-theme.css" \
-    "$CONFIG_HOME/waybar/theme.css"
-
-
-link_generated \
-    "$ATM_GENERATED/swaync-theme.css" \
-    "$CONFIG_HOME/swaync/theme.css"
-
+  "$ATM_GENERATED/waybar-theme.css" \
+  "$CONFIG_HOME/waybar/theme.css"
 
 link_generated \
-    "$ATM_GENERATED/kitty-theme.conf" \
-    "$CONFIG_HOME/kitty/theme.conf"
+  "$ATM_GENERATED/swaync-theme.css" \
+  "$CONFIG_HOME/swaync/theme.css"
 
+link_generated \
+  "$ATM_GENERATED/kitty-theme.conf" \
+  "$CONFIG_HOME/kitty/theme.conf"
 
 # ============================================================
 # FINAL APPLY
@@ -662,7 +631,6 @@ info "Applying $CURRENT_THEME through packaged manager"
 
 ok "Theme applied"
 
-
 # ============================================================
 # DOCTOR
 # ============================================================
@@ -671,15 +639,13 @@ echo
 info "Running themectl doctor"
 echo
 
-
 if "$ATM_BIN" doctor; then
-    echo
-    ok "Migration completed successfully"
+  echo
+  ok "Migration completed successfully"
 else
-    echo
-    warn "Migration completed but doctor reported problems"
+  echo
+  warn "Migration completed but doctor reported problems"
 fi
-
 
 # ============================================================
 # RESULT
